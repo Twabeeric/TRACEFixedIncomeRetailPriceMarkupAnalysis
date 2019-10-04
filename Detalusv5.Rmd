@@ -1,0 +1,274 @@
+---
+title: "Detalusv3"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+---
+title: "Detalus"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Loading packages
+```{r}
+library(readxl)
+library(ggplot2)
+library(sqldf)
+library(tidyverse)
+```
+#Loading data and formatting data types
+```{r}
+setwd("M:/Documents/TRACE Csv") 
+char_data <- read.csv("March 2018 TRACE ALL.csv", stringsAsFactors = F) 
+char_data=char_data[,c("cusip_id","ascii_rptd_vol_tx", "trd_exctn_dt", "trd_exctn_tm","trans_dt","rptd_pr", "side", "rptg_party_type", "contra_party_type" )]#reading in csv file
+num_data <- data.frame(data.matrix(char_data))
+numeric_columns <- sapply(num_data,function(x){mean(as.numeric(is.na(x)))<0.5})
+final_data <- data.frame(num_data[,numeric_columns], char_data[,!numeric_columns]) #processing file to get correct variables for character and numeric
+dtx=final_data
+dtx[is.na(dtx)]=0 #setting all NA values to numerical zero
+dtx=dtx[which(dtx$rptd_pr>10 & dtx$ascii_rptd_vol_tx>10),]
+```
+
+#Summary statistics
+```{r}
+no_of_transactions=length(dtx$cusip_id)
+par_value=sum(as.numeric(dtx$ascii_rptd_vol_tx))
+aggregate_markups=0
+aggregate_excess_markup=0
+unique_cusips=length(unique(dtx$cusip_id))
+value_traded=sum((as.numeric(dtx$ascii_rptd_vol_tx)/100)*dtx$rptd_pr)
+
+#Purchases vs Sales
+par_purchases=sum(sum(as.numeric(dtx$ascii_rptd_vol_tx)[which(dtx$side=="B")]))
+par_sales=sum(sum(as.numeric(dtx$ascii_rptd_vol_tx)[which(dtx$side=="S")]))
+value_purchases=sum((as.numeric(dtx$ascii_rptd_vol_tx[which(dtx$side=="B")])/100)*dtx$rptd_pr[which(dtx$side=="B")])
+value_sales=sum((as.numeric(dtx$ascii_rptd_vol_tx[which(dtx$side=="S")])/100)*dtx$rptd_pr[which(dtx$side=="S")])
+cusip_list=unique(dtx$cusip_id)
+```
+
+Creating dataframe with sql for agency trades with same time
+```{r}
+dtx1=dtx
+ddx=sqldf("select dtx.cusip_id, dtx1.cusip_id, dtx.ascii_rptd_vol_tx, dtx1.ascii_rptd_vol_tx ,dtx.trd_exctn_dt, dtx1.trd_exctn_dt, dtx.trd_exctn_tm, dtx1.trd_exctn_tm, dtx.rptd_pr, dtx1.rptd_pr, dtx.side, dtx1.side from dtx join dtx1 on dtx.cusip_id=dtx1.cusip_id and dtx.ascii_rptd_vol_tx=dtx1.ascii_rptd_vol_tx and dtx.trd_exctn_dt=dtx1.trd_exctn_dt and
+dtx.trd_exctn_tm=dtx1.trd_exctn_tm and dtx.side<>dtx1.side")
+
+```
+Creating markup and removing duplicates
+```{r}
+ddx$markup=ifelse(ddx$side=="S", (ddx$rptd_pr-ddx$rptd_pr..10)/ddx$rptd_pr, (ddx$rptd_pr..10-ddx$rptd_pr)/ddx$rptd_pr..10) #defining a column for markup
+
+#Dollar differnce
+ddx$dollardiff=ifelse(ddx$side=="S", (ddx$rptd_pr-ddx$rptd_pr..10), (ddx$rptd_pr..10-ddx$rptd_pr))
+#Removing duplicated rows
+ddxnp=ddx[which(!duplicated(ddx[,c("cusip_id","ascii_rptd_vol_tx", "trd_exctn_dt", "trd_exctn_tm", "rptd_pr")])==T),]
+```
+
+```{r}
+#Plotting a color scatter plot to show buys and sells
+p3 = ggplot(ddxnp, aes(x = ddxnp$ascii_rptd_vol_tx))+geom_point(aes(y=ddxnp$markup, col=ddxnp$side, alpha=.5)) + xlim(c(0, 5000000)) + ylim(c(0, .17)) + labs(subtitle="Volume vs Markups", 
+       y="Markups", 
+       x="Volume", 
+       title="Scatterplot")
+
+plot(p3)
+ggsave("ScatterplotDealerBuysandSellsVolumevsMarkup.png")
+
+#Plotting for Dealer Sells
+p4 = ggplot(ddxnp[which(ddxnp$side=="S"),], aes(x = ddxnp$ascii_rptd_vol_tx[which(ddxnp$side=="S")],y=ddxnp$markup[which(ddxnp$side=="S")]) )+geom_point(color='darkblue') + xlim(c(0, 5000000)) + ylim(c(0, .17)) + labs(subtitle="Volume vs Markups Dealer Sells", 
+       y="Markups", 
+       x="Volume", 
+       title="Scatterplot") 
+
+plot(p4)
+ggsave("ScatterplotDealerSellsVolumevsMarkup.png")
+
+#Plotting for Dealer Buys
+p5 = ggplot(ddxnp[which(ddxnp$side=="B"),], aes(x = ddxnp$ascii_rptd_vol_tx[which(ddxnp$side=="B")],y=ddxnp$markup[which(ddxnp$side=="B")]) )+geom_point(color='red') + xlim(c(0, 5000000)) + ylim(c(0, .17)) + labs(subtitle="Volume vs Markups Dealer Buys", 
+       y="Markups", 
+       x="Volume", 
+       title="Scatterplot") 
+
+plot(p5)
+ggsave("ScatterplotDealerBuysVolumevsMarkup.png")#plotting volume versus markup for dealer sells for same time trades
+
+p6=ggplot(data = ddxnp[which(ddxnp$side=="S"),]) + 
+  geom_density(mapping = aes(x = ddxnp$markup[which(ddxnp$side=="S")]))+ xlim(c(-0.1,0.1)) + labs(subtitle="Volume vs Markups Dealer Sells", 
+       y="Density", 
+       x="Volume", 
+       title="Density plot") 
+plot(p6)#plotting markup density for dealer sells for same time trades
+ggsave("DensityplotDealerSellsVolumevsMarkup.png")
+
+p7=ggplot(data = ddxnp[which(ddxnp$side=="B"),]) + 
+  geom_density(mapping = aes(x = ddxnp$markup[which(ddxnp$side=="B")]))+ xlim(c(-0.1, 0.1))  + labs(subtitle="Volume vs Markups Dealer Buys", 
+       y="Density", 
+       x="Volume", 
+       title="Density plot") 
+plot(p7)#plotting markup density for dealer sells for same time trades
+ggsave("DensityplotDealerBuysVolumevsMarkup.png")
+
+
+```
+
+Plotting for dollar difference
+```{r}
+p23 = ggplot(ddxnp, aes(x = ddxnp$ascii_rptd_vol_tx))+geom_point(aes(y=ddxnp$dollardiff, col=ddxnp$side, alpha=.5)) + xlim(c(0, 5000000)) + ylim(c(0, 20)) + labs(subtitle="Volume vs Markups", 
+       y="Markups", 
+       x="Volume", 
+       title="Scatterplot")
+
+plot(p23)
+ggsave("DollardiffScatterplotDealerBuysandSellsVolumevsMarkup.png")
+
+#Plotting for Dealer Sells
+p24 = ggplot(ddxnp[which(ddxnp$side=="S"),], aes(x = ddxnp$ascii_rptd_vol_tx[which(ddxnp$side=="S")],y=ddxnp$dollardiff[which(ddxnp$side=="S")]) )+geom_point(color='darkblue') + xlim(c(0, 5000000)) + ylim(c(0, 20)) + labs(subtitle="Volume vs Markups Dealer Sells", 
+       y="Markups", 
+       x="Volume", 
+       title="Scatterplot") 
+
+plot(p24)
+ggsave("DollardiffScatterplotDealerSellsVolumevsMarkup.png")
+
+#Plotting for Dealer Buys
+p25 = ggplot(ddxnp[which(ddxnp$side=="B"),], aes(x = ddxnp$ascii_rptd_vol_tx[which(ddxnp$side=="B")],y=ddxnp$dollardiff[which(ddxnp$side=="B")]) )+geom_point(color='red') + xlim(c(0, 5000000)) + ylim(c(0, 20)) + labs(subtitle="Volume vs Markups Dealer Buys", 
+       y="Markups", 
+       x="Volume", 
+       title="Scatterplot") 
+
+plot(p25)
+ggsave("DollardiffScatterplotDealerBuysVolumevsMarkup.png")#plotting volume versus markup for dealer sells for same time trades
+
+p26=ggplot(data = ddxnp[which(ddxnp$side=="S"),]) + 
+  geom_density(mapping = aes(x = ddxnp$dollardiff[which(ddxnp$side=="S")]))+ xlim(c(-0.1,0.1)) + labs(subtitle="Volume vs Markups Dealer Sells", 
+       y="Density", 
+       x="Volume", 
+       title="Density plot") 
+plot(p26)#plotting markup density for dealer sells for same time trades
+ggsave("DollardiffDensityplotDealerSellsVolumevsMarkup.png")
+
+p27=ggplot(data = ddxnp[which(ddxnp$side=="B"),]) + 
+  geom_density(mapping = aes(x = ddxnp$dollardiff[which(ddxnp$side=="B")]))+ xlim(c(-0.1, 0.1))  + labs(subtitle="Volume vs Markups Dealer Buys", 
+       y="Density", 
+       x="Volume", 
+       title="Density plot") 
+plot(p27)#plotting markup density for dealer sells for same time trades
+ggsave("DollardiffDensityplotDealerBuysVolumevsMarkup.png")
+
+```
+
+#Summary for lot sizes
+```{r}
+lotmatrix=matrix(ncol=6, nrow=10)
+colnames(lotmatrix)=c("Min", "1st Qu", "Median", "Mean", "3rd Qu", "Max")
+rownames(lotmatrix)=c("B 1K-50K","S 1K-50K","B 50K-100K","S 50K-100K", "B 100K-500K","S 100K-500K","B 500K-1000K","S 100K-500K","B 1MM-5MM","S 1MM-5MM")
+lotmatrix[1,]=summary(ddxnp$markup[which(ddxnp$ascii_rptd_vol_tx>=1000 & ddxnp$ascii_rptd_vol_tx<50000 & ddxnp$side=="B")])
+lotmatrix[2,]=summary(ddxnp$markup[which(ddxnp$ascii_rptd_vol_tx>=1000 & ddxnp$ascii_rptd_vol_tx<50000 & ddxnp$side=="S")])
+lotmatrix[3,]=summary(ddxnp$markup[which(ddxnp$ascii_rptd_vol_tx>=50000 & ddxnp$ascii_rptd_vol_tx<100000 & ddxnp$side=="B")])
+lotmatrix[4,]=summary(ddxnp$markup[which(ddxnp$ascii_rptd_vol_tx>=50000 & ddxnp$ascii_rptd_vol_tx<100000 & ddxnp$side=="S")])
+lotmatrix[5,]=summary(ddxnp$markup[which(ddxnp$ascii_rptd_vol_tx>=100000 & ddxnp$ascii_rptd_vol_tx<500000 & ddxnp$side=="B")])
+lotmatrix[6,]=summary(ddxnp$markup[which(ddxnp$ascii_rptd_vol_tx>=100000 & ddxnp$ascii_rptd_vol_tx<500000 & ddxnp$side=="S")])
+lotmatrix[7,]=summary(ddxnp$markup[which(ddxnp$ascii_rptd_vol_tx>=500000 & ddxnp$ascii_rptd_vol_tx<1000000 & ddxnp$side=="B")] )
+lotmatrix[8,]=summary(ddxnp$markup[which(ddxnp$ascii_rptd_vol_tx>=500000 & ddxnp$ascii_rptd_vol_tx<1000000 & ddxnp$side=="S")] )
+lotmatrix[9,]=summary(ddxnp$markup[which(ddxnp$ascii_rptd_vol_tx>=1000000 & ddxnp$ascii_rptd_vol_tx<5000000 & ddxnp$side=="B")])
+lotmatrix[10,]=summary(ddxnp$markup[which(ddxnp$ascii_rptd_vol_tx>=1000000 & ddxnp$ascii_rptd_vol_tx<5000000 & ddxnp$side=="S")])
+
+write.csv(lotmatrix, file = "SummaryAnalysis.csv")
+
+lotmatrix2=matrix(ncol=6, nrow=10)
+colnames(lotmatrix2)=c("Min", "1st Qu", "Median", "Mean", "3rd Qu", "Max")
+rownames(lotmatrix2)=c("B 1K-50K","S 1K-50K","B 50K-100K","S 50K-100K", "B 100K-500K","S 100K-500K","B 500K-1000K","S 100K-500K","B 1MM-5MM","S 1MM-5MM")
+lotmatrix2[1,]=summary(ddxnp$dollardiff[which(ddxnp$ascii_rptd_vol_tx>=1000 & ddxnp$ascii_rptd_vol_tx<50000 & ddxnp$side=="B")])
+lotmatrix2[2,]=summary(ddxnp$dollardiff[which(ddxnp$ascii_rptd_vol_tx>=1000 & ddxnp$ascii_rptd_vol_tx<50000 & ddxnp$side=="S")])
+lotmatrix2[3,]=summary(ddxnp$dollardiff[which(ddxnp$ascii_rptd_vol_tx>=50000 & ddxnp$ascii_rptd_vol_tx<100000 & ddxnp$side=="B")])
+lotmatrix2[4,]=summary(ddxnp$dollardiff[which(ddxnp$ascii_rptd_vol_tx>=50000 & ddxnp$ascii_rptd_vol_tx<100000 & ddxnp$side=="S")])
+lotmatrix2[5,]=summary(ddxnp$dollardiff[which(ddxnp$ascii_rptd_vol_tx>=100000 & ddxnp$ascii_rptd_vol_tx<500000 & ddxnp$side=="B")])
+lotmatrix2[6,]=summary(ddxnp$dollardiff[which(ddxnp$ascii_rptd_vol_tx>=100000 & ddxnp$ascii_rptd_vol_tx<500000 & ddxnp$side=="S")])
+lotmatrix2[7,]=summary(ddxnp$dollardiff[which(ddxnp$ascii_rptd_vol_tx>=500000 & ddxnp$ascii_rptd_vol_tx<1000000 & ddxnp$side=="B")] )
+lotmatrix2[8,]=summary(ddxnp$dollardiff[which(ddxnp$ascii_rptd_vol_tx>=500000 & ddxnp$ascii_rptd_vol_tx<1000000 & ddxnp$side=="S")] )
+lotmatrix2[9,]=summary(ddxnp$dollardiff[which(ddxnp$ascii_rptd_vol_tx>=1000000 & ddxnp$ascii_rptd_vol_tx<5000000 & ddxnp$side=="B")])
+lotmatrix2[10,]=summary(ddxnp$dollardiff[which(ddxnp$ascii_rptd_vol_tx>=1000000 & ddxnp$ascii_rptd_vol_tx<5000000 & ddxnp$side=="S")])
+
+write.csv(lotmatrix2, file = "DollardiffSummaryAnalysis.csv")
+
+```
+
+
+#Write agency trades file to excel with same time
+```{r}
+write.csv(ddxnp, file = "AgencyTrades.csv")
+write.csv(ddxnp[which(ddxnp$side=="B"),], file = "AgencyTradesDealerBuys.csv")
+write.csv(ddxnp[which(ddxnp$side=="S"),], file = "AgencyTradesDealerSells.csv")
+
+```
+
+
+
+
+
+
+
+
+Creating dataframe with sql for interdealer vs similar trades
+```{r}
+
+dtx1=dtx[which(dtx$rptg_party_type!=dtx$contra_party_type),]
+dtx0=dtx[which(dtx$rptg_party_type==dtx$contra_party_type),]
+ddx1=sqldf("select dtx0.cusip_id, dtx1.cusip_id, dtx0.ascii_rptd_vol_tx, dtx1.ascii_rptd_vol_tx ,dtx0.trd_exctn_dt, dtx1.trd_exctn_dt, dtx0.trd_exctn_tm, dtx1.trd_exctn_tm, dtx0.rptd_pr, dtx1.rptd_pr, dtx0.side, dtx1.side, dtx0.contra_party_type,dtx0.rptg_party_type,dtx1.contra_party_type,dtx1.rptg_party_type from dtx0 join dtx1 on dtx0.cusip_id=dtx1.cusip_id and dtx0.ascii_rptd_vol_tx=dtx1.ascii_rptd_vol_tx and dtx0.trd_exctn_dt=dtx1.trd_exctn_dt and dtx0.side=dtx1.side and dtx0.rptd_pr<>dtx1.rptd_pr")
+
+#Removing duplicates
+ddxnpp=ddx1[which(!duplicated(ddx[,c("cusip_id","ascii_rptd_vol_tx", "trd_exctn_dt", "rptd_pr")])==T),]
+
+```
+#Trying to plot to show difference between interdealer and other prices
+```{r}
+
+
+p14 = ggplot()+geom_point(aes(x = ddxnpp$ascii_rptd_vol_tx, y=ddxnpp$rptd_pr), data=ddxnpp, color='red', alpha=.5) + geom_point(aes(x = ddxnpp$ascii_rptd_vol_tx, y=ddxnpp$rptd_pr..10), data=ddxnpp, shape = 17,colour = 'grey', alpha=.7)+ylim(c(90, 150)) + labs(subtitle="Volume vs Prices", 
+       y="Prices", 
+       x="Dates", 
+       title="Scatterplot")
+plot(p14)
+ggsave("ScatterplotInterdealervsOtherOnlySellsVolumevsMarkup.png")#Trying to compare interdealer prices to other prices
+
+#Plotting for one cusip
+p15 = ggplot()+geom_point(aes(x = ddxnpp$trd_exctn_dt[which(ddxnpp$cusip_id=="369604BQ5")], y=ddxnpp$rptd_pr[which(ddxnpp$cusip_id=="369604BQ5")]), data=ddxnpp[which(ddxnpp$cusip_id=="369604BQ5"),], color='red', alpha=.5) + geom_point(aes(x = ddxnpp$trd_exctn_dt[which(ddxnpp$cusip_id=="369604BQ5")], y=ddxnpp$rptd_pr..10[which(ddxnpp$cusip_id=="369604BQ5")]), data=ddxnpp[which(ddxnpp$cusip_id=="369604BQ5"),], shape = 17,colour = 'grey', alpha=.7)+ylim(c(70, 100)) + labs(subtitle="Volume vs Prices", 
+       y="Prices", 
+       x="Volume", 
+       title="Scatterplot")
+plot(p15)
+ggsave("ScatterplotInterdealervsOtherOnlyCusip369604BQ5VolumevsMarkup.png")
+```
+Lotmatrix for Interdealer
+```{r}
+
+lotmatrix1=matrix(ncol=6, nrow=10)
+colnames(lotmatrix1)=c("Min", "1st Qu", "Median", "Mean", "3rd Qu", "Max")
+rownames(lotmatrix1)=c("Int 1K-50K","Oth 1K-50K","Int 50K-100K","Oth 50K-100K", "Int 100K-500K","Oth 100K-500K","Int 500K-1000K","Oth 100K-500K","Int 1MM-5MM","Oth 1MM-5MM")
+lotmatrix1[1,]=summary(ddxnpp$rptd_pr[which(ddxnpp$ascii_rptd_vol_tx>=1000 & ddxnpp$ascii_rptd_vol_tx<50000 & ddxnpp$side=="S")])
+lotmatrix1[2,]=summary(ddxnpp$rptd_pr..10[which(ddxnpp$ascii_rptd_vol_tx>=1000 & ddxnpp$ascii_rptd_vol_tx<50000 & ddxnpp$side=="S")])
+lotmatrix1[3,]=summary(ddxnpp$rptd_pr[which(ddxnpp$ascii_rptd_vol_tx>=50000 & ddxnpp$ascii_rptd_vol_tx<100000 & ddxnpp$side=="S")])
+lotmatrix1[4,]=summary(ddxnpp$rptd_pr..10[which(ddxnpp$ascii_rptd_vol_tx>=50000 & ddxnpp$ascii_rptd_vol_tx<100000 & ddxnpp$side=="S")])
+lotmatrix1[5,]=summary(ddxnpp$rptd_pr[which(ddxnpp$ascii_rptd_vol_tx>=100000 & ddxnpp$ascii_rptd_vol_tx<500000 & ddxnpp$side=="S")])
+lotmatrix1[6,]=summary(ddxnpp$rptd_pr..10[which(ddxnpp$ascii_rptd_vol_tx>=100000 & ddxnpp$ascii_rptd_vol_tx<500000 & ddxnpp$side=="S")])
+lotmatrix1[7,]=summary(ddxnpp$rptd_pr[which(ddxnpp$ascii_rptd_vol_tx>=500000 & ddxnpp$ascii_rptd_vol_tx<1000000 & ddxnpp$side=="S")] )
+lotmatrix1[8,]=summary(ddxnpp$rptd_pr..10[which(ddxnpp$ascii_rptd_vol_tx>=500000 & ddxnpp$ascii_rptd_vol_tx<1000000 & ddxnpp$side=="S")] )
+lotmatrix1[9,]=summary(ddxnpp$rptd_pr[which(ddxnpp$ascii_rptd_vol_tx>=1000000 & ddxnpp$ascii_rptd_vol_tx<5000000 & ddxnpp$side=="S")])
+lotmatrix1[10,]=summary(ddxnpp$rptd_pr..10[which(ddxnpp$ascii_rptd_vol_tx>=1000000 & ddxnpp$ascii_rptd_vol_tx<5000000 & ddxnpp$side=="S")])
+
+write.csv(lotmatrix1, file = "InterdealerSummaryAnalysis.csv")
+```
+
+#Write agency trades file to excel with interdealer trades
+```{r}
+write.csv(ddxnpp, file = "InterdealerSameday.csv")
+write.csv(ddxnpp[which(ddxnpp$side=="B"),], file = "InterdealerBuysSameDay.csv")
+write.csv(ddxnpp[which(ddxnpp$side=="S"),], file = "InterdealerSellsSameDay.csv")
+
+```

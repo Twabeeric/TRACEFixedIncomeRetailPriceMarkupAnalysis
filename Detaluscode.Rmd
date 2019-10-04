@@ -1,0 +1,127 @@
+---
+title: "Detalus"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Loading packages
+```{r}
+library(readxl)
+library(ggplot2)
+
+```
+#Loading data and formatting data types
+```{r}
+setwd("M:/Documents/TRACE Csv")
+char_data <- read.csv("December 2018 TRACE ALL.csv", stringsAsFactors = F)
+num_data <- data.frame(data.matrix(char_data))
+numeric_columns <- sapply(num_data,function(x){mean(as.numeric(is.na(x)))<0.5})
+final_data <- data.frame(num_data[,numeric_columns], char_data[,!numeric_columns])
+dtx=final_data
+dtx[is.na(dtx)]=0
+```
+#Creating easy column names
+```{r}
+
+```
+#Summary statistics
+```{r}
+no_of_transactions=length(dtx$cusip_id)
+par_value=sum(as.numeric(dtx$ascii_rptd_vol_tx))
+aggregate_markups=0
+aggregate_excess_markup=0
+unique_cusips=length(unique(dtx$cusip_id))
+value_traded=sum((as.numeric(dtx$ascii_rptd_vol_tx)/100)*dtx$rptd_pr)
+
+#Purchases vs Sales
+par_purchases=sum(sum(as.numeric(dtx$ascii_rptd_vol_tx)[which(dtx$side=="B")]))
+par_sales=sum(sum(as.numeric(dtx$ascii_rptd_vol_tx)[which(dtx$side=="S")]))
+value_purchases=sum((as.numeric(dtx$ascii_rptd_vol_tx[which(dtx$side=="B")])/100)*dtx$rptd_pr[which(dtx$side=="B")])
+value_sales=sum((as.numeric(dtx$ascii_rptd_vol_tx[which(dtx$side=="S")])/100)*dtx$rptd_pr[which(dtx$side=="S")])
+cusip_list=unique(dtx$cusip_id)
+```
+#Finding trading frequency of cusip
+```{r}
+f=matrix(nrow=length(cusip_list), ncol=2)
+for (i in 1:length(cusip_list))
+{
+f[i,1]=cusip_list[i]
+f[i,2]=as.numeric(sum(dtx$cusip_id==cusip_list[i]))
+}
+fn=data.frame(f,stringsAsFactors = FALSE)
+colnames(fn)=c("cusip","freq")
+fn$fqs=as.numeric(as.character(fn$freq))
+fn=fn[order(-fn$fqs),]
+head(fn)
+```
+
+Plotting for frequency
+```{r}
+p1 = ggplot(data=fn, aes(x = fn$cusip)) + geom_point(aes(y=fn$fqs), col="blue")
+plot(p1)
+```
+Plotting for volume
+```{r}
+p2 = ggplot(data=dtx, aes(x = dtx$cusip_id)) + geom_point(aes(y=dtx$ascii_rptd_vol_tx/1000), col="red")
+plot(p2)
+```
+
+Finding Agency trades
+```{r}
+sum_agency_trades=length((dtx$cusip_id[which(dtx$rptg_party_type=="D" & dtx$contra_party_type=="C")]))
+agency_cusips= (dtx$cusip_id[which(dtx$rptg_party_type=="D" & dtx$contra_party_type=="C")])
+ag_data=dtx[,c("cusip_id","ascii_rptd_vol_tx","trans_dt","trd_exctn_tm","rptg_party_type", "contra_party_type","side", "rptd_pr")][dtx$rptg_party_type=="D" & dtx$contra_party_type=="C",]
+#Adding columns to store price, side and no of trades for contra trade
+ag_data$rpice=0
+ag_data$otherside="Empty"
+ag_data$nooftrades=0
+
+#Data complement to ag_data to check
+checkn_data=dtx[,c("cusip_id","ascii_rptd_vol_tx","trans_dt","trd_exctn_tm","rptg_party_type", "contra_party_type","side", "rptd_pr")][dtx$contra_party_type!="C" & dtx$rptg_party_type=="D",]
+
+#Loop to find trades
+for (ag in 1:dim(ag_data)[1])
+{
+  check_data=checkn_data[which(checkn_data$cusip_id==ag_data$cusip_id[ag] & checkn_data$trans_dt==ag_data$trans_dt[ag]),]
+  if(
+    length(check_data$rptd_pr[which(check_data$cusip_id==ag_data$cusip_id[ag] & check_data$ascii_rptd_vol_tx==ag_data$ascii_rptd_vol_tx[ag] & check_data$trans_dt==ag_data$trans_dt[ag] & check_data$trd_exctn_tm==ag_data$trd_exctn_tm[ag])])>0 &
+    
+    isTRUE(check_data$side[which(check_data$cusip_id==ag_data$cusip_id[ag] & check_data$ascii_rptd_vol_tx==ag_data$ascii_rptd_vol_tx[ag] & check_data$trans_dt==ag_data$trans_dt[ag] & check_data$trd_exctn_tm==ag_data$trd_exctn_tm[ag])]!=ag_data$side[ag])
+    
+    )
+  {
+ ag_data$rpice[ag]= mean(check_data$rptd_pr[which(check_data$cusip_id==ag_data$cusip_id[ag] & check_data$ascii_rptd_vol_tx==ag_data$ascii_rptd_vol_tx[ag] & check_data$trans_dt==ag_data$trans_dt[ag] & check_data$trd_exctn_tm==ag_data$trd_exctn_tm[ag])])
+ 
+ ag_data$otherside[ag]= check_data$side[which(check_data$cusip_id==ag_data$cusip_id[ag] & check_data$ascii_rptd_vol_tx==ag_data$ascii_rptd_vol_tx[ag] & check_data$trans_dt==ag_data$trans_dt[ag] & check_data$trd_exctn_tm==ag_data$trd_exctn_tm[ag])][1]
+  ag_data$nooftrades[ag]= length(check_data$rptd_pr[which(check_data$cusip_id==ag_data$cusip_id[ag] & check_data$ascii_rptd_vol_tx==ag_data$ascii_rptd_vol_tx[ag] & check_data$trans_dt==ag_data$trans_dt[ag] & check_data$trd_exctn_tm==ag_data$trd_exctn_tm[ag])])
+  }
+  
+else
+  {
+  ag_data$rpice[ag]=0
+  ag_data$otherside[ag]="Empty"
+  }
+  print(ag)
+  countn=ag
+}
+
+```
+#Plotting for Volume vs Markup for Customer Sales
+```{r}
+#Defining Markup for Customer Sales
+s=ag_data[which(ag_data$rpice>0 & ag_data$side=="S"),]
+p3 = ggplot(data=s, aes(x = s$ascii_rptd_vol_tx)) + geom_point(aes(y=(s$rpice-s$rptd_pr)/s$rpice), col="red")
+plot(p3)
+
+```
+#Plotting for Volume vs Markup for Customer Purchases
+```{r}
+#Defining Markup for Retail Purchases
+ps=ag_data[which(ag_data$rpice>0 & ag_data$side=="B"),]
+p4 = ggplot(data=ps, aes(x = ps$ascii_rptd_vol_tx)) + geom_point(aes(y=(ps$rpice-ps$rptd_pr)/ps$rpice), col="green")
+plot(p4)
+
+```

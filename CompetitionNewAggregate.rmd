@@ -1,0 +1,258 @@
+---
+title: "Competition"
+author: "Eric Ontieri"
+date: "October 31, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Load libraries
+
+```{r}
+library(readxl)
+library(ISLR)
+library(MASS)
+library(class)
+library(boot)
+library(leaps)
+library(glmnet)
+library(ggplot2)
+library(scales)
+library(tree)
+library(gbm)
+library(randomForest)
+library(earth)
+
+
+```
+#Read in csv
+```{r}
+  #setwd("C:\\Users\\liz-d\\Downloads")
+dataStorex = read_xlsx("Store6.xlsx")
+```
+#Processing train and sample data
+
+```{r}
+
+Loaddata1=data.frame(dataStorex[-1])
+Loaddata= Loaddata1[order(Loaddata1$Week),]
+traindata1= subset(Loaddata,Random=="Train")
+testdata1= subset(Loaddata,Random=="Test")
+ddf=dim(traindata1)[2]
+traindata=traindata1[,-ddf]
+testdata=traindata1[,-ddf]
+
+testln=dim(traindata)[1]
+if((testln %% 2) == 0) {testln=testln} else {testln=testln-1}
+set.seed(3)
+train = sample(1:testln,(testln*.5))
+Storelsty=names(traindata)[-1]
+p=length(Storelsty)
+py=p-24
+lsxlst=Storelsty[1:py]
+lsxlsty=Storelsty[(py+1):p]
+
+```
+
+#Preparing predictor list and running linear regression
+```{r}
+valerrorrfor=matrix(rep(0,24))
+valerrorrforwc=matrix(rep(0,24))
+valerrorn=matrix(rep(0,24))
+valerrornwc=matrix(rep(0,24))
+valerrorlass=matrix(rep(0,24))
+valerrorridge=matrix(rep(0,24))
+valerrorboo=matrix(rep(0,24))
+valerrorbag=matrix(rep(0,24))
+valerrormars=matrix(rep(0,24))
+valerrorlasswc=matrix(rep(0,24))
+valerrorridgewc=matrix(rep(0,24))
+valerrorboowc=matrix(rep(0,24))
+valerrorbagwc=matrix(rep(0,24))
+valerrormarswc=matrix(rep(0,24))
+
+for(m in 1:1)
+{
+#Preparing predictor list
+indexofp=m
+ml=lsxlsty[-indexofp]
+mlp=lsxlsty[indexofp]
+
+
+vlist0=list(c("PR","D","F"))
+vlist1=list(c("P","PR","D","F"))
+x=indexofp
+qvlist0 = lapply(vlist0,function(i)paste0(i,x))
+qvlist2 = lapply(vlist1,function(i)paste0(i,x))
+qvlist1=paste0(unlist(qvlist0), collapse = "+")
+
+#Checking polynomials for Price
+limitpoly=5
+valuepoly=matrix(rep(0,limitpoly))
+for(z in 1:limitpoly)
+  {
+  polyindex1=paste0("poly(P",indexofp,",",z,",raw=T)")
+  yindex1=paste0("Y", indexofp,"~")
+  polyplt=cbind(yindex1,polyindex1)
+  lmfit=lm(as.formula(polyplt), data=traindata[train,])
+  l=length(coef(summary(lmfit))[,4])
+  valuepoly[z]=coef(summary(lmfit))[,4][l]
+  }
+ply=matrix(lapply(valuepoly, function(i) abs(.5-i)))
+inpoly=which.min(ply)
+
+if(inpoly==1){pform=paste0("P", indexofp)}
+else if(inpoly==2){pform=paste0("P", indexofp,"+","I(P",indexofp,"^2)")}
+else if(inpoly==3){pform=paste0("P", indexofp,"+","I(P",indexofp,"^2)+","I(P",indexofp,"^3)")}
+else if(inpoly==4){pform=paste0("P", indexofp,"+","I(P",indexofp,"^2)+","I(P",indexofp,"^3)+","I(P",indexofp,"^4)")}
+else {pform=paste0("P", indexofp,"+","I(P",indexofp,"^2)+","I(P",indexofp,"^3)+","I(P",indexofp,"^4)+","I(P",indexofp,"^5)")}
+
+#Constructing formula for linear regression
+polyindex=paste0("poly(P",indexofp,",",inpoly,",raw=T)")
+
+spls=c(pform,unlist(qvlist0),ml)
+qspls=c(unlist(qvlist2),lsxlsty)
+
+pls=names(traindata)[-1]#removing Id
+z=length(pls)
+plst=pls[1:(z-24)] #removing Y's
+plsts=plst[-(indexofp*4)]
+cplsts=c(pform,plsts)
+prdnms=paste(cplsts, collapse = "+")
+yindex=paste0("Y", indexofp,"~")
+
+prdnmsn= paste0(yindex,prdnms)
+prdnmsnwc= paste0(prdnmsn,-1)
+
+#Running linear regression
+lmfit1=lm(as.formula(prdnmsn), data=traindata[train,])
+lmfit2=lm(as.formula(prdnmsnwc), data=traindata[train,])
+matrixy=traindata[,mlp][train]
+
+
+mypredict1=predict(lmfit1, newdata = traindata[-train,])
+valerrorn[m]=mean((mypredict1-matrixy)^2)
+mypredict2=predict(lmfit2, newdata = traindata[train,])
+valerrornwc[m]=mean((mypredict2-matrixy)^2)
+
+#Running Ridge Regression
+responsevary=traindata[,mlp][train]
+observvarx=model.matrix(as.formula(prdnmsn),traindata[train,])
+observvarxwc=model.matrix(as.formula(prdnmsnwc),traindata[train,])
+
+grid = 10^seq(10,0,length=100)
+
+
+cvmylasso0 = cv.glmnet(observvarx,responsevary,alpha = 0)
+cvmylasso0wc = cv.glmnet(observvarxwc,responsevary,alpha = 0)
+bestlam0 = cvmylasso0$lambda.min
+bestlam0wc = cvmylasso0wc$lambda.min
+
+tresponsevary=traindata[,mlp][-train]
+tobservvarx=model.matrix(as.formula(prdnmsn),data=traindata[-train,])
+tobservvarxwc=model.matrix(as.formula(prdnmsnwc),data=traindata[-train,])
+
+
+outmylasso1=glmnet(observvarx,responsevary,alpha=0,lambda=grid, intercept = F)
+outmylasso1wc=glmnet(observvarxwc,responsevary,alpha=0,lambda=grid, intercept = F)
+predridge=predict(outmylasso1, s=bestlam0, newx=tobservvarx, type="response")
+predridgewc=predict(outmylasso1wc, s=bestlam0wc, newx=tobservvarxwc, type="response")
+
+valerrorridge[m]=mean((predridge-tresponsevary)^2)
+valerrorridgewc[m]=mean((predridgewc-tresponsevary)^2)
+
+#Running Lasso
+responsevary=traindata[,mlp][train]
+observvarx=model.matrix(as.formula(prdnmsn),traindata[train,])
+observvarx1wc=model.matrix(as.formula(prdnmsnwc),traindata[train,])
+
+grid = 10^seq(10,0,length=100)
+
+
+cvmylasso = cv.glmnet(observvarx,responsevary,alpha = 1)
+cvmylasso1wc = cv.glmnet(observvarx1wc,responsevary,alpha = 1)
+
+bestlam = cvmylasso$lambda.min
+bestlam1wc = cvmylasso1wc$lambda.min
+
+tresponsevary=traindata[,mlp][-train]
+tobservvarx=model.matrix(as.formula(prdnmsn),data=traindata[-train,])
+tobservvarx1wc=model.matrix(as.formula(prdnmsnwc),data=traindata[-train,])
+
+
+outmylasso=glmnet(observvarx,responsevary,alpha=1,lambda=grid, dfmax=96, intercept = F)
+outmylasso1wc=glmnet(observvarx1wc,responsevary,alpha=1,lambda=grid, dfmax=96, intercept = F)
+
+predlasso=predict(outmylasso, s=bestlam, newx=tobservvarx, type="response")
+predlassowc=predict(outmylasso1wc, s=bestlam1wc, newx=tobservvarx1wc, type="response")
+
+valerrorlass[m]=mean((predlasso-tresponsevary)^2)
+valerrorlasswc[m]=mean((predlassowc-tresponsevary)^2)
+
+
+#Running Bagging
+
+Ytest = traindata[,mlp][-train]
+bagprod = randomForest(as.formula(prdnmsn),data=traindata[train,],importance=TRUE, type="regression", mtry=10)
+bagprodwc = randomForest(as.formula(prdnmsnwc),data=traindata[train,],importance=TRUE, type="regression", mtry=10)
+
+bagprodpred = predict(bagprod, newdata = traindata[-train,])
+bagprodpredwc = predict(bagprodwc, newdata = traindata[-train,])
+valerrorbag[m]=mean((bagprodpred-Ytest)^2)
+valerrorbagwc[m]=mean((bagprodpredwc-Ytest)^2)
+
+#Running RandomForest
+
+Ytest = traindata[,mlp][-train]
+bagprod1 = randomForest(as.formula(prdnmsn),data=traindata[train,],importance=TRUE, type="regression", ntree=50)
+bagprod1wc = randomForest(as.formula(prdnmsnwc),data=traindata[train,],importance=TRUE, type="regression", ntree=50)
+
+bagprodpred1 = predict(bagprod1, newdata = traindata[-train,])
+bagprodpred1wc = predict(bagprod1wc, newdata = traindata[-train,])
+valerrorrfor[m]=mean((bagprodpred1-Ytest)^2)
+valerrorrforwc[m]=mean((bagprodpred1wc-Ytest)^2)
+
+#Running Boosted Trees
+set.seed(1)
+boostprod = gbm(as.formula(prdnmsn),data=traindata[train,],distribution = "gaussian", n.trees=5000,interaction.depth=10)
+boostprodwc = gbm(as.formula(prdnmsnwc),data=traindata[train,],distribution = "gaussian", n.trees=5000,interaction.depth=10)
+
+
+
+
+prodboosttest=predict(boostprod,newdata=traindata[-train,],n.trees=5000)
+prodboosttestwc=predict(boostprodwc,newdata=traindata[-train,],n.trees=5000)
+ytrain=traindata[,mlp][-train]
+valerrorboo[m]=mean((prodboosttest-ytrain)^2)
+valerrorboowc[m]=mean((prodboosttestwc-ytrain)^2)
+
+#Running MARS
+
+library(earth)
+train.y = traindata[,mlp][train]
+test.y = traindata[,mlp][-train]
+ma=1+97
+mdata=traindata[train,c(1:97,m+97)]
+marsdata=mdata[,-1]
+model = earth(marsdata[,-ma], train.y, degree=1)
+
+predict.y =predict(model,newdata=marsdata[,-ma])
+
+valerrormars[m]=mean((predict.y-test.y)^2)
+
+
+}
+cbind(round(valerrorn,2),round(valerrornwc,2),round(valerrorridge,2),round(valerrorridgewc,2),round(valerrorlass,2),round(valerrorlasswc,2),round(valerrorbag,2),round(valerrorbagwc,2),round(valerrorrfor,2),round(valerrorrforwc,2),round(valerrorboo,2),round(valerrorboowc, 2),valerrormars)
+
+modellist=c("linear regression","linear regression without intercept","ridge regression","ridge regression without intercept","lasso","lasso without intercept", "bagging","bagging without intercept","random forest","random forest without intercept","boosted trees","boosted trees without intercept","MARS")
+
+for (ff in 1:24)
+{
+p=c(valerrorn[ff],valerrornwc[ff],valerrorridge[ff],valerrorridgewc[ff],valerrorlass[ff],valerrorlasswc[ff],valerrorbag[ff],valerrorbagwc[ff],valerrorrfor[ff],valerrorrforwc[ff],valerrorboo[ff],valerrorboowc[ff],valerrormars[ff])
+cat("For product",ff,"the best model is",modellist[which.min(p)],"with a training error of",round(min(p),2),"\n")
+}
+
+```
