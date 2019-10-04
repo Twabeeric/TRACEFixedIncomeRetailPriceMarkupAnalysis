@@ -89,16 +89,16 @@ These are executed by the dealer on behalf of the client. They are reported on t
 ## Municipals: Interdealer Price as Cost Price
 
 The lowest interdealer price executed for each cusip on each day is taken as the cost price and other retail trades marked off this price
-<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture18.png">
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture19.png">
 
 ## Municipals: Interdealer Price as Cost Price
 
 The lowest interdealer price executed for each cusip on each day is taken as the cost price and other retail trades marked off this price
-<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture19.png">
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture20.png">
 ## Municipals: VWAP Interdealer Price as Cost Price
 
 The volume-weighted interdealer price executed for each cusip on each day is taken as the cost price and other retail trades marked off this price.
-<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture20.png">
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture21.png">
 ## MBSs: Summary statistics 2018
 
 <img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture22.png">
