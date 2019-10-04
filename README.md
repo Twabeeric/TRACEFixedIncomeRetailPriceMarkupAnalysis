@@ -11,6 +11,7 @@ TBA, ABS, and CMO securities will not be presented in this report. The analysis 
 
 ## Limitations
 The greatest limitation of this project is the anonymity of the data. In every methodology we developed, the crucial step was matching the different sides of each trade. In most cases, the information was not sufficient to execute this process. Thus, the resulting methods either rely on sampling or approximation to estimate true markups. In order to produce reputable results, we made conservative assumptions that produced smaller mark ups than expected. 
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture7.png">
 
 ## Research methods
 1.Agency Trades
@@ -52,52 +53,53 @@ Pros: find the exact markup of a targeted bond
 Cons: a single bond is not general
 
 ## Summary Of Results
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture9.png">
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture10.png">
 ## Corporates: Summary Statistics 2018
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture11.png">
 ## Corporates: Agent Trades 
 These are executed by the dealer on behalf of the client. They are reported on the same date, same time with same volume
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture12.png">
 ## Corporates: Interdealer Price as Cost Price
 The lowest interdealer price executed for each cusip on each day is taken as the cost price and other retail trades marked off this price
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture13.png">
 ## Corporates: VWAP Interdealer Price as Cost Price
 The volume-weighted interdealer price executed for each cusip on each day is taken as the cost price and other retail trades marked off this price.
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture14.png">
 ## Municipals: Summary statistics 2018
 Municipal bonds were the second largest data set we analyzed. Similar to MBS’s that we will see later, the average markup is larger than corporate bonds but a discount to what is seen in the market. 
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture15.png">
 ## Municipals: Agent Trades
 These are executed by the dealer on behalf of the client. They are reported on the same date, same time with same volume
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture16.png">
 ## Municipals: Agent Trades
 These are executed by the dealer on behalf of the client. They are reported on the same date, same time with same volume
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture17.png">
 ## Municipals: Interdealer Price as Cost Price
 The lowest interdealer price executed for each cusip on each day is taken as the cost price and other retail trades marked off this price
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture18.png">
 ## Municipals: Interdealer Price as Cost Price
 The lowest interdealer price executed for each cusip on each day is taken as the cost price and other retail trades marked off this price
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture19.png">
 ## Municipals: VWAP Interdealer Price as Cost Price
 The volume-weighted interdealer price executed for each cusip on each day is taken as the cost price and other retail trades marked off this price.
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture20.png">
 ## MBSs: Summary statistics 2018
 The final asset class we analyzed was Mortgage Backed Securities. While tarded significantly less frequently than corporate or municipal bonds, the results trended in a very similar area as municipal's.
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture21.png">
 ## MBSs: Agent Trades
 These are executed by the dealer on behalf of the client. They are reported on the same date, same time with same volume
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture22.png">
 ## MBSs: Agent Trades
 These are executed by the dealer on behalf of the client. They are reported on the same date, same time with same volume
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture23.png">
 ## MBSs: Interdealer Price as Cost Price
 The lowest interdealer price executed for each cusip on each day is taken as the cost price and other retail trades marked off this price.
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture24.png">
 ## MBSs: VWAP Interdealer Price as Cost Price
 The volume-weighted interdealer price executed for each cusip on each day is taken as the cost price and other retail trades marked off this price.
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture25.png">
 ## MBSs: VWAP Interdealer Price as Cost Price
 The volume-weighted interdealer price executed for each cusip on each day is taken as the cost price and other retail trades marked off this price.
-
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture26.png">
 
