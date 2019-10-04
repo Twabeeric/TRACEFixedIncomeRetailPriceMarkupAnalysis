@@ -11,7 +11,7 @@ TBA, ABS, and CMO securities will not be presented in this report. The analysis 
 
 ## Limitations
 The greatest limitation of this project is the anonymity of the data. In every methodology we developed, the crucial step was matching the different sides of each trade. In most cases, the information was not sufficient to execute this process. Thus, the resulting methods either rely on sampling or approximation to estimate true markups. In order to produce reputable results, we made conservative assumptions that produced smaller mark ups than expected. 
-<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture7.png">
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Pictureanon.png">
 
 ## Research methods
 1.Agency Trades
