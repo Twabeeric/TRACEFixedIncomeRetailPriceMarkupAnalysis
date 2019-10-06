@@ -15,12 +15,19 @@ The greatest limitation of this project is the anonymity of the data. In every m
 
 ## Research methods
 1.Agency Trades
+
 2.Inter-Dealer Pricing
+
   -20% most Liquid
+  
   -20% least Liquid
+  
   -Single Cusips 
+  
   -Daily lowest interdealer price as cost price
+  
   -Daily volume-weighted interdealer price as cost price
+  
 
 ## Methodology: Agency Trades
 We consider agency trades to be trades executed as agent and falling within the same date and time.
