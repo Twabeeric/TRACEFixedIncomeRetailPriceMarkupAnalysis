@@ -63,7 +63,9 @@ Cons: a single bond is not general
 
 <img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/sum1.png">
 
+
 <img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/sum2.png">
+
 
 ## Corporates: Summary Statistics 2018
 
