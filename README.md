@@ -77,7 +77,7 @@ These are executed by the dealer on behalf of the client. They are reported on t
 
 <img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture11.png">
 
-<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture12.png
+<img width="800" src="https://github.com/Twabeeric/TRACE-Fixed-Income-Retail-Price-Markup-Analysis/blob/master/Picture12.png">
 
 ## Corporates: Interdealer Price as Cost Price
 
