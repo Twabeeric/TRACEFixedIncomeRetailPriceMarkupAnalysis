@@ -1,5 +1,4 @@
 ---
-title: "Detalusv3"
 output: pdf_document
 ---
 
@@ -8,8 +7,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ---
-title: "Detalus"
-output: html_document
 ---
 
 ```{r setup, include=FALSE}
