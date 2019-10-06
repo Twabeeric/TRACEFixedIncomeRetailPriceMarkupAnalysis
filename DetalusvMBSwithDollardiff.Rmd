@@ -1,6 +1,4 @@
 ---
-title: "Detalusv2"
-output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -9,8 +7,6 @@ setwd("M:/Documents/R/Detalus/Data1/MBS")
 ```
 
 ---
-title: "Detalus"
-output: html_document
 ---
 
 ```{r setup, include=FALSE}
