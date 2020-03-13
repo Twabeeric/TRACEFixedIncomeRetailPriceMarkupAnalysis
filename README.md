@@ -1,10 +1,10 @@
 # TRACE-Fixed-Income-Retail-Price-Markup-Analysis
 Our model utilized a big data approach to attempt to understand and pin down average markups in the industry
 ## Context
-The fixed income market in the United States is a notoriously opaque market
+The fixed income market in the United States is a notoriously opaque market.
 As a result, it is very difficult, if not impossible, to track and quantify the markups that are being charged 
 ## Securities Presented
-The scope of our research focused on Corporate, Municipal, and MBS. Based on the current holdings of Detalus, this analysis would provide the best ballance of potential insight and large computationally heavy computer modeling.
+The scope of our research focused on Corporate, Municipal, and MBS. Based on the current holdings of the client, this analysis would provide the best balance of potential insight and large computationally heavy computer modeling.
 
 ## Securities Ignored
 TBA, ABS, and CMO securities will not be presented in this report. The analysis is only as good as the raw data. These files did not include information on interdealer interaction and thus made it impossible to develop meaningful insight.
